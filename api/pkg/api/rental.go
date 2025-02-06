@@ -10,6 +10,7 @@ import (
 
 type RentalPickupRequest struct {
 	BookingNumber      string    `json:"booking_number"`
+	RegistrationNumber string    `json:"registration_number"`
 	CarCategoryName    string    `json:"car_category_id"`
 	CustomerSSN        string    `json:"customer_ssn"`
 	PickupDateTime     time.Time `json:"pickup_date_time"`
@@ -23,12 +24,14 @@ func handleRentalPickup(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		decoded, err := decode[RentalPickupRequest](r)
 		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			log.Error(err.Error())
 			return
 		}
 
 		rental := core.NewRental(
 			decoded.BookingNumber,
+			decoded.RegistrationNumber,
 			decoded.CarCategoryName,
 			decoded.CustomerSSN,
 			decoded.PickupDateTime,
@@ -36,11 +39,13 @@ func handleRentalPickup(
 		)
 
 		if err := rental.Validate(r.Context()); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			log.Error(err.Error())
 			return
 		}
 
-		if err := rentalSvc.RentalRepo.Create(r.Context(), rental); err != nil {
+		if err := rentalSvc.RentalPickup(r.Context(), rental); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			log.Error(err.Error())
 			return
 		}
@@ -60,12 +65,10 @@ func handleRentalReturn(
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		bookingNumber := r.PathValue("bn")
-		if bookingNumber == "" {
-			log.Error("missing booking number in request path")
-		}
 
 		decoded, err := decode[RentalReturnRequest](r)
 		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			log.Error(err.Error())
 			return
 		}
@@ -76,6 +79,7 @@ func handleRentalReturn(
 		}
 
 		if err := update.Validate(r.Context()); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			log.Error(err.Error())
 			return
 		}
@@ -86,6 +90,7 @@ func handleRentalReturn(
 			update,
 		)
 		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			log.Error(err.Error())
 		}
 

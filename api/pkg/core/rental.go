@@ -118,6 +118,14 @@ func NewRentalService(
 	}
 }
 
+func (s *RentalService) RentalPickup(ctx context.Context, rental *Rental) error {
+	if err := s.RentalRepo.Create(ctx, rental); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *RentalService) RentalReturn(ctx context.Context, bn string, update RentalUpdatable) (float64, error) {
 	rental, err := s.RentalRepo.Update(ctx, bn, &update)
 	if err != nil {
