@@ -2,14 +2,14 @@ package memory
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/setalid/snapcar/api/pkg/core"
 )
 
 const (
-	BaseDayRentalKey = "base_day_rental"
-	BaseKmPriceKey   = "base_km_price"
+	GlobalSettingsTable = "global_settings"
+	BaseDayRentalKey    = "base_day_rental"
+	BaseKmPriceKey      = "base_km_price"
 )
 
 type RentalRateRepo struct {
@@ -21,12 +21,12 @@ func NewRentalRateRepo(db *DB) *RentalRateRepo {
 }
 
 func (r *RentalRateRepo) Create(ctx context.Context, rate *core.RentalRate) error {
-	err := r.db.Set(ctx, BaseDayRentalKey, strconv.Itoa(rate.BaseDayRental), false)
+	err := r.db.Set(ctx, GlobalSettingsTable, BaseDayRentalKey, rate.BaseDayRental, false)
 	if err != nil {
 		return err
 	}
 
-	err = r.db.Set(ctx, BaseKmPriceKey, strconv.Itoa(rate.BaseKmPrice), false)
+	err = r.db.Set(ctx, GlobalSettingsTable, BaseKmPriceKey, rate.BaseKmPrice, false)
 	if err != nil {
 		return err
 	}
@@ -35,12 +35,12 @@ func (r *RentalRateRepo) Create(ctx context.Context, rate *core.RentalRate) erro
 }
 
 func (r *RentalRateRepo) Update(ctx context.Context, update *core.RentalRateUpdatable) error {
-	err := r.db.Set(ctx, BaseDayRentalKey, strconv.Itoa(update.BaseDayRental), true)
+	err := r.db.Set(ctx, GlobalSettingsTable, BaseDayRentalKey, update.BaseDayRental, true)
 	if err != nil {
 		return err
 	}
 
-	err = r.db.Set(ctx, BaseKmPriceKey, strconv.Itoa(update.BaseKmPrice), true)
+	err = r.db.Set(ctx, GlobalSettingsTable, BaseKmPriceKey, update.BaseKmPrice, true)
 	if err != nil {
 		return err
 	}
@@ -49,23 +49,13 @@ func (r *RentalRateRepo) Update(ctx context.Context, update *core.RentalRateUpda
 }
 
 func (r *RentalRateRepo) Get(ctx context.Context) (*core.RentalRate, error) {
-	baseDayRentalString, err := r.db.Get(ctx, BaseDayRentalKey)
-	if err != nil {
+	var baseDayRental int
+	if err := r.db.Get(ctx, GlobalSettingsTable, BaseDayRentalKey, &baseDayRental); err != nil {
 		return nil, err
 	}
 
-	baseDayRental, err := strconv.Atoi(baseDayRentalString)
-	if err != nil {
-		return nil, err
-	}
-
-	baseKmPriceString, err := r.db.Get(ctx, BaseKmPriceKey)
-	if err != nil {
-		return nil, err
-	}
-
-	baseKmPrice, err := strconv.Atoi(baseKmPriceString)
-	if err != nil {
+	var baseKmPrice int
+	if err := r.db.Get(ctx, GlobalSettingsTable, BaseKmPriceKey, &baseKmPrice); err != nil {
 		return nil, err
 	}
 

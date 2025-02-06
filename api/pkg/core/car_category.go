@@ -15,8 +15,20 @@ func NewCarCategory(name string, baseDayFactor, baseKmFactor float64) *CarCatego
 	return &CarCategory{
 		Name:          name,
 		BaseDayFactor: baseDayFactor,
-		BaseKmFactor:  baseDayFactor,
+		BaseKmFactor:  baseKmFactor,
 	}
+}
+
+func SmallCar() *CarCategory {
+	return NewCarCategory("Small car", 1, 0)
+}
+
+func Combi() *CarCategory {
+	return NewCarCategory("Combi", 1.3, 1)
+}
+
+func Truck() *CarCategory {
+	return NewCarCategory("Truck", 1.5, 1.5)
 }
 
 func (c *CarCategory) Validate(_ context.Context) error {
@@ -34,12 +46,12 @@ func (c *CarCategory) Validate(_ context.Context) error {
 func (c *CarCategory) PriceFormula() string {
 	var dayFormula string
 	if c.BaseDayFactor > 0 {
-		dayFormula = fmt.Sprintf("baseDayRental * numberOfDays * %f", c.BaseDayFactor)
+		dayFormula = fmt.Sprintf("baseDayRental * numberOfDays * %.1f", c.BaseDayFactor)
 	}
 
 	var kmFormula string
 	if c.BaseKmFactor > 0 {
-		kmFormula = fmt.Sprintf("baseKmPrice * numberOfKm * %f", c.BaseKmFactor)
+		kmFormula = fmt.Sprintf("baseKmPrice * numberOfKm * %.1f", c.BaseKmFactor)
 	}
 
 	if dayFormula != "" && kmFormula != "" {

@@ -50,7 +50,6 @@ func handleRentalPickup(
 }
 
 type RentalReturnRequest struct {
-	BookingNumber      string    `json:"booking_number"`
 	ReturnDateTime     time.Time `json:"return_date_time"`
 	ReturnMeterReading int       `json:"return_meter_reading"`
 }
@@ -60,6 +59,11 @@ func handleRentalReturn(
 	rentalSvc *core.RentalService,
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bookingNumber := r.PathValue("bn")
+		if bookingNumber == "" {
+			log.Error("missing booking number in request path")
+		}
+
 		decoded, err := decode[RentalReturnRequest](r)
 		if err != nil {
 			log.Error(err.Error())
@@ -78,7 +82,7 @@ func handleRentalReturn(
 
 		price, err := rentalSvc.RentalReturn(
 			r.Context(),
-			decoded.BookingNumber,
+			bookingNumber,
 			update,
 		)
 		if err != nil {

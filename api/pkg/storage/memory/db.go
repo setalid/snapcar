@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sync"
 )
@@ -12,42 +13,80 @@ var (
 )
 
 type DB struct {
-	lock sync.Mutex
-	m    map[string]string
+	lock   sync.Mutex
+	tables map[string]map[string][]byte
 }
 
 func New() *DB {
 	return &DB{
-		m: make(map[string]string),
+		tables: make(map[string]map[string][]byte),
 	}
 }
 
-func (db *DB) Get(_ context.Context, key string) (string, error) {
+func (db *DB) createTableIfNotExists(table string) {
+	if _, exists := db.tables[table]; !exists {
+		db.tables[table] = make(map[string][]byte)
+	}
+}
+
+func (db *DB) Get(_ context.Context, table, key string, v any) error {
 	db.lock.Lock()
 	defer db.lock.Unlock()
 
-	v, exists := db.m[key]
+	if _, exists := db.tables[table]; !exists {
+		return ErrNotFound
+	}
+
+	b, exists := db.tables[table][key]
 	if !exists {
-		return "", ErrNotFound
+		return ErrNotFound
 	}
 
-	return v, nil
+	return json.Unmarshal(b, v)
 }
 
-func (db *DB) Set(_ context.Context, key string, v string, force bool) error {
+func (db *DB) Set(_ context.Context, table, key string, v any, force bool) error {
 	db.lock.Lock()
 	defer db.lock.Unlock()
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	db.createTableIfNotExists(table)
 
 	if force {
-		db.m[key] = v
+		db.tables[table][key] = b
 		return nil
 	}
 
-	if _, exists := db.m[key]; exists {
+	if _, exists := db.tables[table][key]; exists {
 		return ErrAlreadyExist
 	}
 
-	db.m[key] = v
+	db.tables[table][key] = b
 
 	return nil
+}
+
+func (db *DB) All(_ context.Context, table string, v any) error {
+	db.lock.Lock()
+	defer db.lock.Unlock()
+
+	if _, exists := db.tables[table]; !exists {
+		return ErrNotFound
+	}
+
+	rows := make([][]byte, 0, len(db.tables[table]))
+	for _, b := range db.tables[table] {
+		rows = append(rows, b)
+	}
+
+	b, err := json.Marshal(rows)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, v)
 }

@@ -36,8 +36,8 @@ func run(ctx context.Context) error {
 	db := memory.New()
 
 	// Repositories
-	rentalRepo := memory.NewRentalRepo(db)
 	carCategoryRepo := memory.NewCarCategoryRepo(db)
+	rentalRepo := memory.NewRentalRepo(db, carCategoryRepo)
 	rentalRateRepo := memory.NewRentalRateRepo(db)
 
 	// Services
