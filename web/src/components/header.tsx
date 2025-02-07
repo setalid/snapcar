@@ -16,7 +16,7 @@ export function Header() {
             <NavigationMenuItem>
               <Link href="/" legacyBehavior passHref>
                 <NavigationMenuLink active={pathname == "/"} className={navigationMenuTriggerStyle()}>
-                  <Home className="h-4 w-4" />
+                  <Car className="h-4 w-4" />
                   <div className="ml-1">Rentals</div>
                 </NavigationMenuLink>
               </Link>
@@ -26,14 +26,6 @@ export function Header() {
                 <NavigationMenuLink active={pathname == "/categories"} className={navigationMenuTriggerStyle()}>
                   <Boxes className="h-4 w-4" />
                   <div className="ml-1">Categories</div>
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link href="/cars" legacyBehavior passHref>
-                <NavigationMenuLink active={pathname == "/cars"} className={navigationMenuTriggerStyle()}>
-                  <Car className="h-4 w-4" />
-                  <div className="ml-1">Cars</div>
                 </NavigationMenuLink>
               </Link>
             </NavigationMenuItem>

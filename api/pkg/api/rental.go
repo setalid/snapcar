@@ -1,17 +1,19 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/setalid/snapcar/api/pkg/core"
+	"github.com/setalid/snapcar/api/pkg/utils"
 	"go.uber.org/zap"
 )
 
 type RentalPickupRequest struct {
 	BookingNumber      string    `json:"booking_number"`
 	RegistrationNumber string    `json:"registration_number"`
-	CarCategoryName    string    `json:"car_category_id"`
+	CarCategoryName    string    `json:"car_category_name"`
 	CustomerSSN        string    `json:"customer_ssn"`
 	PickupDateTime     time.Time `json:"pickup_date_time"`
 	PickupMeterReading int       `json:"pickup_meter_reading"`
@@ -28,6 +30,8 @@ func handleRentalPickup(
 			log.Error(err.Error())
 			return
 		}
+
+		log.Sugar().Infof("Received decoded: %+v", decoded)
 
 		rental := core.NewRental(
 			decoded.BookingNumber,
@@ -50,7 +54,7 @@ func handleRentalPickup(
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		encode(w, r, http.StatusOK, map[string]any{})
 	})
 }
 
@@ -96,6 +100,35 @@ func handleRentalReturn(
 
 		encode(w, r, http.StatusOK, map[string]any{
 			"price": price,
+		})
+	})
+}
+
+func handleGetRentals(
+	log *zap.Logger,
+	rentalSvc *core.RentalService,
+) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rentals, err := rentalSvc.RentalRepo.All(r.Context())
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			log.Error(err.Error())
+		}
+
+		viewRentals := utils.Map(rentals, func(rental core.Rental) map[string]any {
+			return map[string]any{
+				"bookingNumber":      rental.BookingNumber,
+				"registrationNumber": rental.RegistrationNumber,
+				"carCategoryName":    rental.CarCategoryName,
+				"pickupDate":         rental.PickupDateTime.String(),
+				"pickupMeterReading": fmt.Sprint(rental.PickupMeterReading),
+				"returnDate":         rental.ReturnDateTime.String(),
+				"returnMeterReading": fmt.Sprint(rental.ReturnMeterReading),
+			}
+		})
+
+		encode(w, r, http.StatusOK, map[string]any{
+			"rentals": viewRentals,
 		})
 	})
 }

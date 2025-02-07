@@ -3,8 +3,17 @@ import Link from "next/link";
 import { Container } from "~/components/layout/container";
 import { Button } from "~/components/ui/button";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import { Rental } from "~/types/types";
 
-export default function HomePage() {
+type Data = {
+  rentals: Rental[]
+}
+
+export default async function HomePage() {
+  const res = await fetch("http://localhost:8080/rental/all");
+  const data = await res.json();
+  const { rentals } = data as Data
+
   return (
     <main>
       <Container>
@@ -16,8 +25,8 @@ export default function HomePage() {
             </Link>
           </Button>
           <Button asChild className="flex-1 h-24 text-lg">
-            <Link href="/car-delivery">
-              Car Delivery
+            <Link href="/car-return">
+              Car Return
               <ArrowRight />
             </Link>
           </Button>
@@ -32,16 +41,23 @@ export default function HomePage() {
                 <TableHead>Registration #</TableHead>
                 <TableHead>Car category</TableHead>
                 <TableHead>Pickup date</TableHead>
-                <TableHead>Meter reading (km)</TableHead>
+                <TableHead>Pickup reading (km)</TableHead>
+                <TableHead>Return date</TableHead>
+                <TableHead>Return reading (km)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell>INV001</TableCell>
-                <TableCell>Paid</TableCell>
-                <TableCell>Credit Card</TableCell>
-                <TableCell>$250.00</TableCell>
-              </TableRow>
+              {rentals?.map((rental: Rental) => (
+                <TableRow key={rental.bookingNumber}>
+                  <TableCell>{rental.bookingNumber}</TableCell>
+                  <TableCell>{rental.registrationNumber}</TableCell>
+                  <TableCell>{rental.carCategoryName}</TableCell>
+                  <TableCell>{rental.pickupDate}</TableCell>
+                  <TableCell>{rental.pickupMeterReading}</TableCell>
+                  <TableCell>{rental.returnDate}</TableCell>
+                  <TableCell>{rental.returnMeterReading}</TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>

@@ -57,6 +57,7 @@ func Run(ctx context.Context) error {
 
 	rootHandler := NewRootHandler(
 		logger,
+		carCategoryRepo,
 		rentalSvc,
 	)
 

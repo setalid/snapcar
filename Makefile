@@ -2,6 +2,10 @@
 test:
 	cd api && go test ./...
 
-.PHONY: dev
-dev:
+.PHONY: dev-web
+web:
+	cd web && npm run dev
+
+.PHONY: dev-api
+api:
 	cd api && go run .

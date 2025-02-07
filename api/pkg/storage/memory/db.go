@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 )
 
@@ -78,15 +79,18 @@ func (db *DB) All(_ context.Context, table string, v any) error {
 		return ErrNotFound
 	}
 
-	rows := make([][]byte, 0, len(db.tables[table]))
-	for _, b := range db.tables[table] {
-		rows = append(rows, b)
-	}
+	var builder strings.Builder
+	builder.WriteString("[")
 
-	b, err := json.Marshal(rows)
-	if err != nil {
-		return err
+	first := true
+	for _, jsonBytes := range db.tables[table] {
+		if !first {
+			builder.WriteString(",")
+		}
+		first = false
+		builder.Write(jsonBytes)
 	}
+	builder.WriteString("]")
 
-	return json.Unmarshal(b, v)
+	return json.Unmarshal([]byte(builder.String()), v)
 }

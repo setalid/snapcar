@@ -1,12 +1,15 @@
 export type Category = {
-  id: string
   name: string
   priceFormula: string
 }
 
-// TODO: Remove?
-export type Car = {
-  id: string
-  category: Category
+export type Rental = {
+  bookingNumber: string
   registrationNumber: string
+  carCategoryName: string
+  pickupDate: string
+  pickupMeterReading: string
+  returnDate: string
+  returnMeterReading: string
 }
+

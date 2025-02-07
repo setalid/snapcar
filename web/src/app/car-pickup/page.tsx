@@ -1,8 +1,11 @@
 import CarPickupForm from "~/components/car-pickup-form";
 import { Container } from "~/components/layout/container";
-import { categories } from "~/mock/categories";
 
-export default function CarPickupPage() {
+export default async function CarPickupPage() {
+  const res = await fetch("http://localhost:8080/category/all");
+  const data = await res.json();
+  const { categories } = data
+
   return (
     <main>
       <Container>
@@ -14,3 +17,4 @@ export default function CarPickupPage() {
     </main>
   )
 }
+

@@ -2,17 +2,13 @@
 
 import { useForm } from "react-hook-form"
 import { z } from "zod";
-import { format } from "date-fns"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "./ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, Form } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Category } from "~/types/types";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { cn } from "~/lib/utils";
-import { Calendar } from "./ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 
 const CarPickupSchema = z.object({
@@ -23,8 +19,9 @@ const CarPickupSchema = z.object({
     .min(1, 'Social security number is required')
     .regex(/^\d{11}$/, 'Invalid SSN format (expected DDMMYYXXXXX)'),
   carCategory: z.string().min(1, 'Car category is required'),
-  pickupDateTime: z.date(),
-  currentMeterReading: z.number().min(0, 'Meter reading must be a positive number'), // Current meter reading (km)
+  pickupDateTime: z.preprocess(input => `${input}:00Z`,
+    z.string().datetime({ local: true })),
+  currentMeterReading: z.number({ coerce: true }).min(0)
 });
 
 type CarPickupFormProps = {
@@ -32,13 +29,51 @@ type CarPickupFormProps = {
 }
 
 export default function CarPickupForm(p: CarPickupFormProps) {
+  const router = useRouter();
+
   const form = useForm<z.infer<typeof CarPickupSchema>>({
     resolver: zodResolver(CarPickupSchema),
-    defaultValues: {},
+    defaultValues: {
+      bookingNumber: "",
+      registrationNumber: "",
+      customerSSN: "",
+      carCategory: "",
+      pickupDateTime: "",
+      currentMeterReading: 0,
+    },
   })
 
   function onSubmit(values: z.infer<typeof CarPickupSchema>) {
     console.log(values)
+    const body = {
+      booking_number: values.bookingNumber,
+      registration_number: values.registrationNumber,
+      customer_ssn: values.customerSSN,
+      car_category_name: values.carCategory,
+      pickup_date_time: values.pickupDateTime,
+      pickup_meter_reading: values.currentMeterReading,
+    };
+
+    fetch("http://localhost:8080/rental/pickup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Success:", data);
+        router.replace("/")
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   }
 
   return (
@@ -83,7 +118,7 @@ export default function CarPickupForm(p: CarPickupFormProps) {
             <FormItem>
               <FormLabel>Customer social security number (SSN)</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="DDMMYYXXXXX" {...field} />
+                <Input placeholder="DDMMYYXXXXX" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -103,7 +138,7 @@ export default function CarPickupForm(p: CarPickupFormProps) {
                 </FormControl>
                 <SelectContent>
                   {p.categories.map((c: Category) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -118,38 +153,10 @@ export default function CarPickupForm(p: CarPickupFormProps) {
           name="pickupDateTime"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Current meter reading</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-[240px] pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <FormLabel>Booking number</FormLabel>
+              <FormControl>
+                <Input type="datetime-local" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
